@@ -1,0 +1,167 @@
+version: '3.8'
+
+services:
+  # MongoDB service
+  mongo:
+    image: mongo:5.0
+    container_name: bookstore_mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - bookstore_network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Data seeder service - runs once to populate initial data
+  data-seeder:
+    build:
+      context: ./data-seeder
+      dockerfile: Dockerfile
+    container_name: bookstore_data_seeder
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - bookstore_network
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017
+    restart: "no"
+
+  # Books GET service
+  books-get:
+    build:
+      context: ./books-get
+      dockerfile: Dockerfile
+    container_name: bookstore_books_get
+    restart: always
+    depends_on:
+      mongo:
+        condition: service_healthy
+      data-seeder:
+        condition: service_completed_successfully
+    networks:
+      - bookstore_network
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Books POST service
+  books-post:
+    build:
+      context: ./books-post
+      dockerfile: Dockerfile
+    container_name: bookstore_books_post
+    restart: always
+    depends_on:
+      mongo:
+        condition: service_healthy
+      data-seeder:
+        condition: service_completed_successfully
+    networks:
+      - bookstore_network
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Books PUT service
+  books-put:
+    build:
+      context: ./books-put
+      dockerfile: Dockerfile
+    container_name: bookstore_books_put
+    restart: always
+    depends_on:
+      mongo:
+        condition: service_healthy
+      data-seeder:
+        condition: service_completed_successfully
+    networks:
+      - bookstore_network
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Books DELETE service
+  books-delete:
+    build:
+      context: ./books-delete
+      dockerfile: Dockerfile
+    container_name: bookstore_books_delete
+    restart: always
+    depends_on:
+      mongo:
+        condition: service_healthy
+      data-seeder:
+        condition: service_completed_successfully
+    networks:
+      - bookstore_network
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Web server service
+  web-server:
+    build:
+      context: ./web-server
+      dockerfile: Dockerfile
+    container_name: bookstore_web
+    restart: always
+    depends_on:
+      books-get:
+        condition: service_healthy
+    networks:
+      - bookstore_network
+    environment:
+      - BOOKS_GET_URL=http://books-get:8080
+
+  # NGINX service
+  nginx:
+    image: nginx:alpine
+    container_name: bookstore_nginx
+    restart: always
+    ports:
+      - "3030:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web-server
+      - books-get
+      - books-post
+      - books-put
+      - books-delete
+    networks:
+      - bookstore_network
+
+volumes:
+  mongo_data:
+
+networks:
+  bookstore_network:
+    driver: bridge

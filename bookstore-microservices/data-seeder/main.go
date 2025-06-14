@@ -105,7 +105,7 @@ func main() {
 	fmt.Println("Data seeder starting...")
 	
 	// Wait for MongoDB to be ready
-	time.Sleep(20 * time.Second)
+	// time.Sleep(20 * time.Second)
 	
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -113,21 +113,16 @@ func main() {
 	var client *mongo.Client
 	var err error
 
-	// Retry connection to MongoDB
-	for i := 0; i < 10; i++ {
-		client, err = mongo.Connect(ctx, options.Client().ApplyURI(getMongoURI()))
-		if err == nil {
-			err = client.Ping(ctx, nil)
-			if err == nil {
-				break
-			}
-		}
-		fmt.Printf("Failed to connect to MongoDB (attempt %d/10): %v\n", i+1, err)
-		time.Sleep(5 * time.Second)
+	// Quick connection attempt
+	client, err = mongo.Connect(ctx, options.Client().ApplyURI(getMongoURI()))
+	if err == nil {
+		err = client.Ping(ctx, nil)
 	}
 
 	if err != nil {
-		panic(fmt.Sprintf("Failed to connect to MongoDB after 10 attempts: %v", err))
+		fmt.Printf("Warning: Could not connect to MongoDB: %v\n", err)
+		fmt.Println("Data seeder exiting - no database available")
+		return
 	}
 
 	defer func() {

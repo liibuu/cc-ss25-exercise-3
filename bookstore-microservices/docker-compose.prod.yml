@@ -21,7 +21,7 @@ services:
 
   # Data seeder service
   data-seeder:
-    image: yourusername/bookstore-data-seeder:latest
+    image: liibuu/bookstore-data-seeder:latest
     container_name: bookstore_data_seeder
     depends_on:
       mongo:
@@ -34,7 +34,7 @@ services:
 
   # Books GET service
   books-get:
-    image: yourusername/bookstore-books-get:latest
+    image: liibuu/bookstore-books-get:latest
     container_name: bookstore_books_get
     restart: always
     depends_on:
@@ -49,7 +49,7 @@ services:
 
   # Books POST service
   books-post:
-    image: yourusername/bookstore-books-post:latest
+    image: liibuu/bookstore-books-post:latest
     container_name: bookstore_books_post
     restart: always
     depends_on:
@@ -64,7 +64,7 @@ services:
 
   # Books PUT service
   books-put:
-    image: yourusername/bookstore-books-put:latest
+    image: liibuu/bookstore-books-put:latest
     container_name: bookstore_books_put
     restart: always
     depends_on:
@@ -79,7 +79,7 @@ services:
 
   # Books DELETE service
   books-delete:
-    image: yourusername/bookstore-books-delete:latest
+    image: liibuu/bookstore-books-delete:latest
     container_name: bookstore_books_delete
     restart: always
     depends_on:
@@ -94,7 +94,7 @@ services:
 
   # Web server service
   web-server:
-    image: yourusername/bookstore-web-server:latest
+    image: liibuu/bookstore-web-server:latest
     container_name: bookstore_web
     restart: always
     depends_on:
